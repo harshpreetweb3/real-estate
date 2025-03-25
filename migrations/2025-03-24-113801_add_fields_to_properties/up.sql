@@ -1,0 +1,10 @@
+-- Your SQL goes here
+ALTER TABLE properties ADD COLUMN property_for VARCHAR(255);
+ALTER TABLE properties ADD COLUMN short_description TEXT;
+ALTER TABLE properties ADD COLUMN long_description TEXT;
+ALTER TABLE properties ADD COLUMN country VARCHAR(255);
+ALTER TABLE properties ADD COLUMN state VARCHAR(255);
+ALTER TABLE properties ADD COLUMN city VARCHAR(255);
+ALTER TABLE properties ADD COLUMN whose_property VARCHAR(255);
+ALTER TABLE properties ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE properties ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;

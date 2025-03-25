@@ -3,7 +3,6 @@ mod schema;
 mod models;
 
 use actix_web::{web, App, HttpServer, Responder, HttpResponse};
-// use serde::Serialize;
 use actix_cors::Cors;
 
 //for connection establishment
@@ -12,7 +11,7 @@ use diesel::pg::PgConnection;
 use dotenvy::dotenv;
 use std::env;
 
-//for crud operations
+//for APIs
 use crate::schema::properties::dsl::*;
 use crate::models::{Property, NewProperty};
 
@@ -20,40 +19,42 @@ use crate::models::{Property, NewProperty};
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE URL must be set");
-
     PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
 }
 
+async fn get_properties() -> impl Responder {
+    let mut connection = establish_connection();
+    match properties.load::<Property>(&mut connection) {
+        Ok(results) => HttpResponse::Ok().json(results),
+        Err(_) => HttpResponse::InternalServerError().body("Error fetching properties"),
+    }
+}
 
-// #[derive(Serialize)]
-// struct Property {
-//     id : u32,
-//     name : String,
-//     location : String
+// async fn create_property(new_property: web::Json<Property>) -> impl Responder {
+//     let mut connection = establish_connection();
+//     match diesel::insert_into(properties)
+//         .values(&*new_property)
+//         .get_result::<Property>(&mut connection) {
+//             Ok(inserted_property) => HttpResponse::Ok().json(inserted_property),
+//             Err(_) => HttpResponse::InternalServerError().body("Error inserting property"),
+//     }
 // }
 
-async fn get_properties() -> impl Responder {
-
-    // let properties = vec![
-    //     Property { id : 1, name : "Villa".to_string(), location : "Beachside".to_string()},
-    //     Property { id : 2, name : "Apartment".to_string(), location : "Downtown".to_string()}
-    // ];
-
+async fn create_property(new_property: web::Json<NewProperty>) -> impl Responder {
     let mut connection = establish_connection();
-    let results = properties.load::<Property>(&mut connection).expect("Error loading properties");
-    HttpResponse::Ok().json(results)
+    match diesel::insert_into(properties)
+        .values(&*new_property)
+        .get_result::<Property>(&mut connection) 
+    {
+        Ok(inserted_property) => HttpResponse::Ok().json(inserted_property),
+        Err(e) => {
+            eprintln!("Database insert error: {:?}", e);
+            HttpResponse::InternalServerError().body(format!("Error inserting property: {:?}", e))
+        }
+    }
 }
 
-async fn create_property(new_property : web::Json<NewProperty>) -> impl Responder{
-    let mut connection = establish_connection();
 
-    let inserted_property : Property = diesel::insert_into(properties)
-    .values(&*new_property)
-    .get_result(&mut connection)
-    .expect("Error inserting new property");
-    
-    HttpResponse::Ok().json(inserted_property)
-}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
